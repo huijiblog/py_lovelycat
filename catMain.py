@@ -54,14 +54,7 @@ def msgApi():
             raise TypeError("请使用 http-api 2.4+以上的版本")
 
         if wx_type == "100":  # 私聊消息
-            if "查询QQ#" in msg:
-                uChaGroup = msg.split('#')
-                # 判断字符串是否为只由数字组成
-                if uChaGroup[1].isdigit():
-                    Q_To_Phone(uChaGroup[1], robot_wxid, to_wxid)
-                else:
-                    send_text_msg(robot_wxid, to_wxid, "ERROR COMMAND！")
-            elif msg == "摸鱼":
+            if msg == "摸鱼":
                 gettime = new_moyu(from_name)
                 time.sleep(random.randint(1,5))
                 pic_path =  basedir + '\\user_img\\' + gettime + '.png'
@@ -85,16 +78,40 @@ def msgApi():
                     send_text_msg(robot_wxid, to_wxid, "请填写正确的IP地址！")
             elif "搜斗图#" in msg:
                 uChaGroup = msg.split('#')
-                cx_doutu(uChaGroup[1], robot_wxid, to_wxid)
+                if uChaGroup[1] != '':
+                    cx_doutu(uChaGroup[1], robot_wxid, to_wxid)
             elif "去水印#" in msg:
                 uChaGroup = msg.split('#')
-                douyin_videoJX(uChaGroup[1], "video", robot_wxid, to_wxid)
+                if uChaGroup[1] != '':
+                    douyin_videoJX(uChaGroup[1], "video", robot_wxid, to_wxid)
             elif "取音乐#" in msg:
                 uChaGroup = msg.split('#')
-                douyin_videoJX(uChaGroup[1], "music", robot_wxid, to_wxid)
+                if uChaGroup[1] != '':
+                    douyin_videoJX(uChaGroup[1], "music", robot_wxid, to_wxid)
+            elif "听歌#" in msg:
+                uChaGroup = msg.split('#')
+                if uChaGroup[1] != '':
+                    cloud163(uChaGroup[1], False, robot_wxid, to_wxid, final_from_wxid)
+                else:
+                    doc_path = basedir + '\\music_doc\\' + final_from_wxid + '.txt'
+                    isfiles = os.path.exists(doc_path)
+                    if isfiles:
+                        os.remove(doc_path)
+                        send_text_msg(robot_wxid, to_wxid, '@' + final_nickname + " 温馨提示：您已取消点歌，可以重新正常搜索了")
+                        # send_group_at_msg(robot_wxid, to_wxid, final_from_wxid, final_nickname, "温馨提示：您已取消点歌，可以重新正常搜索了")
+                    else:
+                        send_text_msg(robot_wxid, to_wxid, '@' + final_nickname + " 听啥歌呢？听空气嘛你")
+                        # send_group_at_msg(robot_wxid, to_wxid, final_from_wxid, final_nickname, "听啥歌呢？听空气嘛你")
+            elif msg == "m1" or msg == "m2" or msg == "m3" or msg == "m4" or msg == "m5":
+                doc_path = basedir + '\\music_doc\\' + final_from_wxid + '.txt'
+                isfiles = os.path.exists(doc_path)
+                if isfiles:
+                    cloud163(msg, True, robot_wxid, to_wxid, final_from_wxid)
+                else:
+                    send_text_msg(robot_wxid, to_wxid, '@' + final_nickname + " 你干嘛~啊哈~哎哟")
+                    # send_group_at_msg(robot_wxid, to_wxid, final_from_wxid, final_nickname, "你干嘛~啊哈~哎哟")
             else:
                 pass
-                # send_group_at_msg(robot_wxid, to_wxid, final_from_wxid, final_nickname, "Hello！请加我私聊")
         else:
             pass
     else:
@@ -143,8 +160,17 @@ def new_moyu(from_uname):
     font1 = ImageFont.truetype('msyh.ttc', size=16)
     # 是否摸到鱼
     if isGetFish:
-        # 一个中文 占16px空隙。一个符号占12px
-        Alltext.text(xy=(49, 20), text=from_uname, fill=(70, 81, 232), font=font1)
+        # 统计中文和非中文字数
+        cnCount = 0
+        otherCount = 0
+        if str == type(from_uname):
+            for str_tmp in from_uname:
+                if ord(str_tmp) - ord('0') >= 128:
+                    cnCount += 1
+                else:
+                    otherCount += 1
+        # 一个中文占18px空隙。非中文占8px
+        Alltext.text(xy=(49 + (cnCount*18) + (otherCount*8), 20), text=from_uname, fill=(70, 81, 232), font=font1)
         Alltext.text(xy=(49 + 16 + 16 + 16 + 16 + 12, 20), text='摸到了一条', fill=(0, 0, 0), font=font1)
         fishName = fishImgName.rstrip('.jpg')
         Alltext.text(xy=(49 + 16 + 16 + 16 + 16 + 12 + 80, 20), text=fishName, fill=(203, 2, 25), font=font1)
@@ -159,6 +185,7 @@ def new_moyu(from_uname):
     weekCN = weekDict[nowDate.strftime('%w')]
     today0H = nowDate.replace(hour=0, minute=0, second=0, microsecond=0)
     today6H = nowDate.replace(hour=6, minute=0, second=0, microsecond=0)
+    today9H = nowDate.replace(hour=9, minute=0, second=0, microsecond=0)
     today11H = nowDate.replace(hour=11, minute=0, second=0, microsecond=0)
     today13H = nowDate.replace(hour=13, minute=0, second=0, microsecond=0)
     today18H = nowDate.replace(hour=18, minute=0, second=0, microsecond=0)
@@ -181,18 +208,22 @@ def new_moyu(from_uname):
 
     # 下班
     dictTime = {}
-    timeTotolSec = (today18H - nowDate).seconds
-    if timeTotolSec > 0 and timeTotolSec < 60:
+    if (nowDate >= today9H) and nowDate < today18H:
+        timeTotolSec = (today18H - nowDate).seconds
+        if timeTotolSec > 0 and timeTotolSec < 60:
+            dictTime['hours'] = 0
+            dictTime['minutes'] = 0
+        else:
+            timeMin = timeTotolSec // 60
+            if ((timeMin / 60) >= 1) and ((timeMin % 60) != 0):
+                dictTime['hours'] = timeMin // 60
+                dictTime['minutes'] = timeMin % 60
+            else:
+                dictTime['hours'] = 0
+                dictTime['minutes'] = timeMin
+    else:
         dictTime['hours'] = 0
         dictTime['minutes'] = 0
-    else:
-        timeMin = timeTotolSec // 60
-        if ((timeMin / 60) >= 1) and ((timeMin % 60) != 0):
-            dictTime['hours'] = timeMin // 60
-            dictTime['minutes'] = timeMin % 60
-        else:
-            dictTime['hours'] = 0
-            dictTime['minutes'] = timeMin
     ### 小时
     font2 = ImageFont.truetype('digital-7-mono-3.ttf', size=22)
     if len(str(dictTime['hours'])) == 1:
@@ -411,6 +442,55 @@ def douyin_videoJX(v_url, mode, botID, to_wxID):
                 fp.write(data)
         time.sleep(random.randint(3,6))
         send_video_msg(botID, to_wxID, Video_downPath)
+
+#搜歌听歌功能
+def cloud163(text, mode, botID, to_wxID, member_wxID):
+    # mode参数，false为搜歌，true为选歌
+    if mode:
+        songCh = {'m1':0, 'm2':1, 'm3':2, 'm4':3, 'm5':4}
+        songID = []
+        path = basedir + "\\music_doc\\" + member_wxID + '.txt'
+        with open(path) as fp:
+            for ftext in fp.readlines():
+                ftext = ftext.strip()
+                songID.append(ftext)
+            fp.close()
+        time.sleep(random.randint(1, 3))
+        send_music_msg(botID, to_wxID, songID[songCh[text]])
+        os.remove(path)
+    else:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36'
+        }
+        html = requests.get(url='https://music.cyrilstudio.top/search?keywords=' + text, headers=headers)
+        jsonarr = json.loads(html.content.decode('utf-8'))
+        if jsonarr['code'] == 200:
+            mu1 = jsonarr['result']['songs'][0]
+            mu2 = jsonarr['result']['songs'][1]
+            mu3 = jsonarr['result']['songs'][2]
+            mu4 = jsonarr['result']['songs'][3]
+            mu5 = jsonarr['result']['songs'][4]
+            with open(basedir+"\\music_doc\\"+member_wxID+'.txt', "w+") as fp:
+                fp.write(
+                    str(mu1['id']) + "\n" + \
+                    str(mu2['id']) + "\n" + \
+                    str(mu3['id']) + "\n" + \
+                    str(mu4['id']) + "\n" + \
+                    str(mu5['id']) + "\n"
+                    )
+                fp.close()
+            Allresult = "======请问听哪首?======\n" + \
+                        "m1：" + mu1['name'] + ' - ' + mu1['album']['name'] + "\n" + \
+                        "m2：" + mu2['name'] + ' - ' + mu2['album']['name'] + "\n" + \
+                        "m3：" + mu3['name'] + ' - ' + mu3['album']['name'] + "\n" + \
+                        "m4：" + mu4['name'] + ' - ' + mu4['album']['name'] + "\n" + \
+                        "m5：" + mu5['name'] + ' - ' + mu5['album']['name'] + "\n\n" + \
+                        "防止刷屏,限制搜索5个结果,直接发送对应序列号即可获取歌曲链接,取消选取歌曲状态发送 听歌# 即可\n" + \
+                        "======================="
+            time.sleep(random.randint(1, 3))
+            send_text_msg(botID, to_wxID, Allresult)
+        else:
+            send_text_msg(botID, to_wxID, "ERROR：搜不到该歌曲！")
 
 
 if __name__ == "__main__":
