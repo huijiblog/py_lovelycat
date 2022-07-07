@@ -31,5 +31,5 @@ Python3.9
 因群友反馈等待时间太长，已缩短各项延迟回复时间  
 新增 `听歌功能`，项目目录下新增一个`music_doc`文件夹，用于该功能使用  
   
-
+  
 [1]:https://github.com/huijiblog/py_lovelycat/blob/main/%E5%8F%AF%E7%88%B1%E7%8C%AB4.4.1%E5%90%AB%E5%BC%80%E5%8F%91%E5%8C%85(%E5%AF%86%E7%A0%81169).zip
